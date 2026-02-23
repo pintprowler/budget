@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budget Jars</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #13151a;
+    --surface: #1e2028;
+    --surface2: #282b35;
+    --surface3: #31343f;
+    --border: #2e3140;
+    --accent: #4ade80;
+    --accent-dim: #1a3d28;
+    --blue: #3b82f6;
+    --orange: #f59e0b;
+    --red: #ef4444;
+    --red-dim: #3d1414;
+    --text: #f0f2f8;
+    --muted: #6b7280;
+    --muted2: #9ca3af;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 90px;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 16px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .header-title { font-size: 1.6rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+  .header-title span { color: var(--accent); }
+  .period-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--muted2);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .header-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .pay-pill {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    font-weight: 500;
+  }
+  .pay-pill label { color: var(--muted); }
+  .pay-pill input {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.9rem;
+    font-weight: 500;
+    width: 75px;
+    outline: none;
+  }
+  .btn {
+    background: var(--accent);
+    color: #0a1a10;
+    border: none;
+    border-radius: 20px;
+    padding: 7px 16px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.82rem;
+    transition: opacity 0.15s;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn.ghost { background: var(--surface2); color: var(--muted2); border: 1px solid var(--border); }
+  .btn.ghost:hover { border-color: var(--accent); color: var(--accent); opacity: 1; }
+  .btn.danger { background: var(--red); color: #fff; }
+  .btn.sm { padding: 4px 10px; font-size: 0.75rem; }
+
+  .summary-scroll {
+    overflow-x: auto;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    scrollbar-width: none;
+  }
+  .summary-scroll::-webkit-scrollbar { display: none; }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 16px;
+    min-width: 130px;
+    flex-shrink: 0;
+  }
+  .stat-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
+  .stat-value { font-family: 'DM Mono', monospace; font-size: 1.15rem; font-weight: 500; color: var(--text); }
+  .stat-value.green { color: var(--accent); }
+  .stat-value.red { color: var(--red); }
+
+  .cat-filter {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .cat-filter::-webkit-scrollbar { display: none; }
+  .cat-pill {
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--muted2);
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .cat-pill.active { background: var(--accent); color: #0a1a10; border-color: var(--accent); }
+
+  .jars-list {
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  .jar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .jar.depleted { border-color: rgba(239,68,68,0.3); }
+  .jar.sweet { border-color: rgba(74,222,128,0.2); }
+
+  .jar-top {
+    padding: 14px 14px 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .jar-left { flex: 1; min-width: 0; }
+  .jar-cat-row { margin-bottom: 5px; }
+  .cat-tag {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 0.67rem;
+    font-weight: 700;
+    color: var(--muted2);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+  .jar-name { font-size: 1.05rem; font-weight: 700; color: var(--text); }
+  .jar-actions { display: flex; gap: 5px; flex-shrink: 0; margin-top: 2px; }
+
+  .jar-stats {
+    padding: 10px 14px 0;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .prob-block { display: flex; align-items: center; gap: 4px; font-size: 0.82rem; }
+  .prob-label { color: var(--muted); font-weight: 500; }
+  .prob-val { font-weight: 700; color: var(--text); font-family: 'DM Mono', monospace; }
+  .divider-dot { color: var(--border); font-size: 1.2rem; line-height: 1; }
+
+  .jar-bar-wrap { padding: 10px 14px 0; }
+  .jar-bar-bg { height: 5px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+  .jar-bar-fill { height: 100%; border-radius: 99px; background: var(--accent); transition: width 0.4s ease; }
+  .jar-bar-fill.mid { background: var(--orange); }
+  .jar-bar-fill.low { background: var(--red); }
+
+  .jar-balance-row {
+    padding: 8px 14px 0;
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+  }
+  .balance-val { font-family: 'DM Mono', monospace; font-size: 1.4rem; font-weight: 500; color: var(--accent); }
+  .balance-val.orange { color: var(--orange); }
+  .balance-val.red { color: var(--red); }
+  .balance-of { font-size: 0.78rem; color: var(--muted); }
+
+  .sweet-badge {
+    margin: 8px 14px 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(74,222,128,0.25);
+    border-radius: 4px;
+    padding: 3px 9px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .sweet-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 5px var(--accent); flex-shrink: 0; }
+  .depletion-badge {
+    margin: 8px 14px 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--red-dim);
+    border: 1px solid rgba(239,68,68,0.25);
+    border-radius: 4px;
+    padding: 3px 9px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--red);
+  }
+
+  .jar-notes-txt { padding: 6px 14px 0; font-size: 0.75rem; color: var(--muted); font-style: italic; line-height: 1.4; }
+
+  .jar-spend {
+    padding: 10px 14px 14px;
+    margin-top: 8px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .spend-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.88rem;
+    padding: 8px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .spend-input:focus { border-color: var(--accent); }
+  .spend-input::placeholder { color: var(--muted); }
+
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 200;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    padding: 24px 20px 32px;
+    width: 100%;
+    max-width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal-handle { width: 36px; height: 4px; background: var(--surface3); border-radius: 99px; margin: 0 auto 20px; }
+  .modal h2 { font-size: 1.2rem; font-weight: 800; color: var(--text); margin-bottom: 18px; letter-spacing: -0.01em; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+  .form-group input, .form-group textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-group input:focus, .form-group textarea:focus { border-color: var(--accent); }
+  .form-group textarea { resize: vertical; min-height: 65px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+  .history-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 16px;
+    background: var(--blue);
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 20px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.85rem;
+    box-shadow: 0 4px 24px rgba(59,130,246,0.35);
+    z-index: 150;
+  }
+  .new-jar-fab {
+    position: fixed;
+    bottom: 20px;
+    left: 16px;
+    background: var(--accent);
+    color: #0a1a10;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 20px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.85rem;
+    box-shadow: 0 4px 24px rgba(74,222,128,0.3);
+    z-index: 150;
+  }
+
+  .history-panel {
+    position: fixed;
+    bottom: 0; right: 0;
+    width: 100%;
+    max-width: 400px;
+    max-height: 65vh;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    z-index: 160;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+    display: flex;
+    flex-direction: column;
+  }
+  .history-panel.open { transform: translateY(0); }
+  .history-header { padding: 16px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .history-header h3 { font-size: 1rem; font-weight: 800; }
+  .history-list { overflow-y: auto; flex: 1; padding: 8px; }
+  .h-entry { display: flex; justify-content: space-between; align-items: flex-start; padding: 9px 10px; border-radius: 8px; gap: 8px; }
+  .h-entry:hover { background: var(--surface2); }
+  .h-name { font-size: 0.85rem; font-weight: 600; }
+  .h-jar { font-size: 0.73rem; color: var(--muted); margin-top: 2px; }
+  .h-amt { font-family: 'DM Mono', monospace; font-size: 0.9rem; color: var(--red); font-weight: 500; }
+  .h-amt.add { color: var(--accent); }
+  .h-undo { font-size: 0.7rem; color: var(--muted); cursor: pointer; margin-top: 3px; text-align: right; }
+  .h-undo:hover { color: var(--accent); }
+
+  .empty { text-align: center; padding: 60px 24px; color: var(--muted); }
+  .empty h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="header-title">Budget <span>Jars</span></div>
+    <div class="period-badge" id="periodLabel"></div>
+  </div>
+  <div class="header-controls">
+    <div class="pay-pill">
+      <label>Paycheck</label>
+      <input type="number" id="paycheckInput" placeholder="3015">
+    </div>
+    <button class="btn ghost sm" onclick="resetAllBalances()">New Pay Period</button>
+  </div>
+</header>
+
+<div class="summary-scroll" id="summaryBar"></div>
+<div class="cat-filter" id="catFilter"></div>
+<div class="jars-list" id="jarsGrid"></div>
+<div class="empty" id="emptyState" style="display:none">
+  <h2>No jars yet</h2>
+  <p>Tap + New Jar to get started.</p>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2 id="modalTitle">New Jar</h2>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Jar Name</label>
+        <input type="text" id="fName" placeholder="Groceries">
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <input type="text" id="fCategory" placeholder="Food" list="catList">
+        <datalist id="catList"></datalist>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Monthly Cost ($)</label>
+        <input type="number" id="fMonthly" placeholder="600" min="0">
+      </div>
+      <div class="form-group">
+        <label>Per-Check Alloc ($)</label>
+        <input type="number" id="fPerCheck" placeholder="300" min="0">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Current Balance ($) — leave blank to use per-check amount</label>
+      <input type="number" id="fBalance" placeholder="">
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <textarea id="fNotes" placeholder="Any reminders..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="saveJar()">Save Jar</button>
+    </div>
+  </div>
+</div>
+
+<button class="new-jar-fab" onclick="openModal()">+ New Jar</button>
+<button class="history-btn" onclick="toggleHistory()">📋 History</button>
+
+<div class="history-panel" id="historyPanel">
+  <div class="history-header">
+    <h3>Transactions</h3>
+    <button class="btn ghost sm" onclick="toggleHistory()">Close</button>
+  </div>
+  <div class="history-list" id="historyList"></div>
+</div>
+
+<script>
+let state = { paycheck: 3015, jars: [], history: [], period: '', activeCategory: 'All' };
+let editingId = null;
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+function save() { try { localStorage.setItem('budgetJars_v3', JSON.stringify(state)); } catch(e) {} }
+function load() { try { const d = localStorage.getItem('budgetJars_v3'); if (d) state = JSON.parse(d); } catch(e) {} }
+
+function seedData() {
+  const csvJars = [
+    { name: 'Gas', category: 'Travel', monthly: 120, perCheck: 60, notes: '' },
+    { name: 'Groceries', category: 'Groceries', monthly: 600, perCheck: 300, notes: '300 already done, usually 600' },
+    { name: 'Percy Items', category: 'Pet', monthly: 60, perCheck: 30, notes: '' },
+    { name: 'Percy Vet', category: 'Pet', monthly: 300, perCheck: 150, notes: '' },
+    { name: 'Medical Insurance', category: 'Medical', monthly: 248, perCheck: 124, notes: '124 next check' },
+    { name: 'Dental Insurance', category: 'Medical', monthly: 16, perCheck: 8, notes: '' },
+    { name: 'Dad Dentist', category: 'Medical', monthly: 30, perCheck: 15, notes: '15 per check' },
+    { name: 'Mom Dentist', category: 'Medical', monthly: 100, perCheck: 50, notes: 'Adding 25 from last check' },
+    { name: 'Contacts', category: 'Medical', monthly: 30, perCheck: 15, notes: '15 per check' },
+    { name: 'Gym', category: 'Self-Care', monthly: 88, perCheck: 44, notes: '' },
+    { name: 'Derm Biopsy', category: 'Medical', monthly: 50, perCheck: 25, notes: 'Actual cost TBD' },
+    { name: 'Jason Lab Bills', category: 'Medical', monthly: 40, perCheck: 20, notes: 'Date of Service 12/5' },
+    { name: 'Lina Lab Bills', category: 'Medical', monthly: 80, perCheck: 40, notes: 'Anticipated co-pay for GI' },
+    { name: 'Mom Hair', category: 'Self-Care', monthly: 100, perCheck: 50, notes: '50 per check' },
+    { name: 'Dad Hair', category: 'Self-Care', monthly: 30, perCheck: 15, notes: '15 per check' },
+    { name: 'Eli Hair', category: 'Kids', monthly: 30, perCheck: 15, notes: '15 per check' },
+    { name: 'Mom Nails', category: 'Self-Care', monthly: 100, perCheck: 50, notes: 'Anticipated cost' },
+    { name: 'Jason ER PP', category: 'Medical', monthly: 50, perCheck: 25, notes: '25 per check needed' },
+    { name: 'Mom ER PP', category: 'Medical', monthly: 0, perCheck: 0, notes: 'Amount TBC' },
+    { name: 'Winter Clothes', category: 'Self-Care', monthly: 400, perCheck: 200, notes: '' },
+    { name: 'Japan Savings', category: 'Vacation', monthly: 2200, perCheck: 1100, notes: '' },
+    { name: 'Back to Savings', category: 'Savings', monthly: 0, perCheck: 0, notes: "Covering Olive's passport" },
+    { name: 'TEAS Test', category: 'School', monthly: 150, perCheck: 75, notes: 'Actual cost TBD' },
+    { name: 'Study Prep', category: 'School', monthly: 150, perCheck: 75, notes: 'Actual cost TBD' },
+    { name: 'Knotts', category: 'Fun', monthly: 100, perCheck: 50, notes: 'Put a little away each check' },
+    { name: 'Discover', category: 'Debt', monthly: 0, perCheck: 0, notes: '' },
+    { name: 'Fantasy Football', category: 'Fun', monthly: 34, perCheck: 17, notes: 'Pay 17 this check and next' },
+    { name: "Girls Hair", category: 'Self-Care', monthly: 0, perCheck: 0, notes: 'Amount TBD' },
+  ];
+  state.jars = csvJars.map(j => ({ id: uid(), ...j, balance: j.perCheck }));
+  state.paycheck = 3015;
+  state.period = currentPeriod();
+  state.activeCategory = 'All';
+}
+
+function currentPeriod() {
+  const d = new Date();
+  const day = d.getDate();
+  const mon = d.toLocaleString('default', { month: 'short' });
+  return `${mon} ${day <= 15 ? '1–15' : '16–' + new Date(d.getFullYear(), d.getMonth()+1, 0).getDate()}`;
+}
+
+function fmt(n) { return Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+function render() {
+  renderSummary();
+  renderCatFilter();
+  renderJars();
+  renderHistory();
+  updateCatList();
+  document.getElementById('periodLabel').textContent = state.period || currentPeriod();
+  document.getElementById('paycheckInput').value = state.paycheck || '';
+}
+
+function renderSummary() {
+  const totalAlloc = state.jars.reduce((s, j) => s + (j.perCheck || 0), 0);
+  const totalBal = state.jars.reduce((s, j) => s + (j.balance || 0), 0);
+  const remaining = (state.paycheck || 0) - totalAlloc;
+  document.getElementById('summaryBar').innerHTML = `
+    <div class="stat"><div class="stat-label">Paycheck</div><div class="stat-value">$${fmt(state.paycheck||0)}</div></div>
+    <div class="stat"><div class="stat-label">Allocated / Check</div><div class="stat-value">$${fmt(totalAlloc)}</div></div>
+    <div class="stat"><div class="stat-label">Unallocated</div><div class="stat-value ${remaining < 0 ? 'red' : 'green'}">$${fmt(remaining)}</div></div>
+    <div class="stat"><div class="stat-label">Total Balances</div><div class="stat-value">$${fmt(totalBal)}</div></div>
+  `;
+}
+
+function renderCatFilter() {
+  const cats = ['All', ...new Set(state.jars.map(j => j.category))];
+  document.getElementById('catFilter').innerHTML = cats.map(c =>
+    `<div class="cat-pill ${c === (state.activeCategory||'All') ? 'active' : ''}" onclick="setCategory('${c}')">${c}</div>`
+  ).join('');
+}
+
+function setCategory(cat) { state.activeCategory = cat; render(); }
+
+function renderJars() {
+  const grid = document.getElementById('jarsGrid');
+  const empty = document.getElementById('emptyState');
+  const filtered = state.activeCategory === 'All' ? state.jars : state.jars.filter(j => j.category === state.activeCategory);
+  if (!filtered.length) { grid.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+
+  grid.innerHTML = filtered.map(j => {
+    const pct = j.perCheck > 0 ? Math.min(100, Math.max(0, (j.balance / j.perCheck) * 100)) : (j.balance > 0 ? 100 : 0);
+    const fillClass = pct <= 25 ? 'low' : pct <= 60 ? 'mid' : '';
+    const balClass = j.balance <= 0 ? 'red' : pct <= 60 ? 'orange' : '';
+    const isSweet = j.balance > 0 && pct >= 80;
+    const isDepleted = j.balance <= 0 && j.perCheck > 0;
+    const hasCarryover = j.balance > j.perCheck && j.perCheck > 0;
+    const carryPct = hasCarryover ? ((j.balance - j.perCheck) / j.perCheck * 100).toFixed(0) : 0;
+    return `
+    <div class="jar ${isDepleted ? 'depleted' : isSweet ? 'sweet' : ''}" id="jar-${j.id}">
+      <div class="jar-top">
+        <div class="jar-left">
+          <div class="jar-cat-row"><span class="cat-tag">${j.category}</span></div>
+          <div class="jar-name">${j.name}</div>
+        </div>
+        <div class="jar-actions">
+          <button class="btn ghost sm" onclick="addToJar('${j.id}')">＋</button>
+          <button class="btn ghost sm" onclick="openEdit('${j.id}')">✎</button>
+          <button class="btn danger sm" onclick="deleteJar('${j.id}')">✕</button>
+        </div>
+      </div>
+      <div class="jar-stats">
+        ${j.monthly ? `<div class="prob-block"><span class="prob-label">Monthly</span>&nbsp;<span class="prob-val">$${fmt(j.monthly)}</span></div><span class="divider-dot">·</span>` : ''}
+        ${j.perCheck ? `<div class="prob-block"><span class="prob-label">Per check</span>&nbsp;<span class="prob-val">$${fmt(j.perCheck)}</span></div>` : ''}
+        ${hasCarryover ? `<span class="divider-dot">·</span><div class="prob-block"><span class="prob-label" style="color:var(--accent)">+${carryPct}% carry</span></div>` : ''}
+      </div>
+      <div class="jar-bar-wrap">
+        <div class="jar-bar-bg"><div class="jar-bar-fill ${fillClass}" style="width:${pct}%"></div></div>
+      </div>
+      <div class="jar-balance-row">
+        <span class="balance-val ${balClass}">$${fmt(j.balance)}</span>
+        ${j.perCheck ? `<span class="balance-of">of $${fmt(j.perCheck)}</span>` : ''}
+      </div>
+      ${isSweet ? `<div class="sweet-badge"><div class="sweet-dot"></div> On Track · ${pct.toFixed(0)}% full</div>` : ''}
+      ${isDepleted ? `<div class="depletion-badge">⚠ Depleted</div>` : ''}
+      ${j.notes ? `<div class="jar-notes-txt">${j.notes}</div>` : ''}
+      <div class="jar-spend">
+        <input class="spend-input" type="number" placeholder="Enter spend amount…" id="spend-${j.id}" min="0"
+          onkeydown="if(event.key==='Enter') spendFromJar('${j.id}')">
+        <button class="btn sm" onclick="spendFromJar('${j.id}')">Spend</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (!state.history.length) { list.innerHTML = '<div style="padding:20px;color:var(--muted);text-align:center;font-size:0.85rem">No transactions yet</div>'; return; }
+  list.innerHTML = [...state.history].reverse().slice(0, 60).map((h, i) => `
+    <div class="h-entry">
+      <div>
+        <div class="h-name">${h.desc || 'Transaction'}</div>
+        <div class="h-jar">${h.jarName} · ${new Date(h.ts).toLocaleDateString()}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="h-amt ${h.amount > 0 ? 'add' : ''}">${h.amount > 0 ? '+' : ''}$${fmt(Math.abs(h.amount))}</div>
+        <div class="h-undo" onclick="undoEntry(${state.history.length - 1 - i})">undo</div>
+      </div>
+    </div>`).join('');
+}
+
+function updateCatList() {
+  const cats = [...new Set(state.jars.map(j => j.category))];
+  document.getElementById('catList').innerHTML = cats.map(c => `<option value="${c}">`).join('');
+}
+
+function spendFromJar(id) {
+  const input = document.getElementById('spend-' + id);
+  const amt = parseFloat(input.value);
+  if (!amt || amt <= 0) return;
+  const jar = state.jars.find(j => j.id === id);
+  if (!jar) return;
+  jar.balance = (jar.balance || 0) - amt;
+  state.history.push({ id: uid(), jarId: id, jarName: jar.name, amount: -amt, desc: `Spent from ${jar.name}`, ts: Date.now() });
+  input.value = '';
+  save(); render();
+}
+
+function addToJar(id) {
+  const amt = parseFloat(prompt('Add amount to jar:'));
+  if (!amt || isNaN(amt) || amt <= 0) return;
+  const jar = state.jars.find(j => j.id === id);
+  if (!jar) return;
+  jar.balance = (jar.balance || 0) + amt;
+  state.history.push({ id: uid(), jarId: id, jarName: jar.name, amount: amt, desc: `Added to ${jar.name}`, ts: Date.now() });
+  save(); render();
+}
+
+function deleteJar(id) {
+  if (!confirm('Delete this jar?')) return;
+  state.jars = state.jars.filter(j => j.id !== id);
+  save(); render();
+}
+
+function undoEntry(idx) {
+  const h = state.history[idx];
+  if (!h) return;
+  const jar = state.jars.find(j => j.id === h.jarId);
+  if (jar) jar.balance = (jar.balance || 0) - h.amount;
+  state.history.splice(idx, 1);
+  save(); render();
+}
+
+function resetAllBalances() {
+  if (!confirm('Start a new pay period? Carryover balances will roll into new allocations.')) return;
+  state.period = currentPeriod();
+  state.jars.forEach(j => {
+    if (j.perCheck > 0) {
+      const carryover = j.balance || 0;
+      j.balance = (j.perCheck || 0) + carryover;
+      state.history.push({ id: uid(), jarId: j.id, jarName: j.name, amount: j.perCheck, desc: `New period (+$${fmt(j.perCheck)}, $${fmt(carryover)} carryover)`, ts: Date.now() });
+    }
+  });
+  save(); render();
+}
+
+function openModal() {
+  editingId = null;
+  document.getElementById('modalTitle').textContent = 'New Jar';
+  ['fName','fCategory','fMonthly','fPerCheck','fBalance','fNotes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('overlay').classList.add('open');
+}
+
+function openEdit(id) {
+  editingId = id;
+  const jar = state.jars.find(j => j.id === id);
+  if (!jar) return;
+  document.getElementById('modalTitle').textContent = 'Edit Jar';
+  document.getElementById('fName').value = jar.name;
+  document.getElementById('fCategory').value = jar.category;
+  document.getElementById('fMonthly').value = jar.monthly || '';
+  document.getElementById('fPerCheck').value = jar.perCheck || '';
+  document.getElementById('fBalance').value = jar.balance || '';
+  document.getElementById('fNotes').value = jar.notes || '';
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeModal() { document.getElementById('overlay').classList.remove('open'); }
+
+function saveJar() {
+  const name = document.getElementById('fName').value.trim();
+  if (!name) { alert('Name required'); return; }
+  const cat = document.getElementById('fCategory').value.trim() || 'General';
+  const monthly = parseFloat(document.getElementById('fMonthly').value) || 0;
+  const perCheck = parseFloat(document.getElementById('fPerCheck').value) || 0;
+  const balInput = document.getElementById('fBalance').value;
+  const balance = balInput !== '' ? parseFloat(balInput) : perCheck;
+  const notes = document.getElementById('fNotes').value.trim();
+  if (editingId) {
+    const jar = state.jars.find(j => j.id === editingId);
+    Object.assign(jar, { name, category: cat, monthly, perCheck, notes });
+    if (balInput !== '') jar.balance = balance;
+  } else {
+    state.jars.push({ id: uid(), name, category: cat, monthly, perCheck, balance, notes });
+  }
+  closeModal(); save(); render();
+}
+
+function toggleHistory() { document.getElementById('historyPanel').classList.toggle('open'); }
+
+document.getElementById('paycheckInput').addEventListener('change', e => {
+  state.paycheck = parseFloat(e.target.value) || 0;
+  save(); render();
+});
+document.getElementById('overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('overlay')) closeModal();
+});
+
+load();
+if (!state.jars || !state.jars.length) seedData();
+if (!state.activeCategory) state.activeCategory = 'All';
+render();
+</script>
+</body>
+</html>
